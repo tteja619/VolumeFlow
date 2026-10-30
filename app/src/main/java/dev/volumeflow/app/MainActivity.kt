@@ -76,7 +76,15 @@ private fun VolumeFlowHome() {
         }.toMap()
     }.collectAsState(initial = emptyMap())
 
-    LaunchedEffect(shizukuStatus, saved) {\n        if (VolumeFlowShizuku.isReady()) {\n            saved.forEach { (packageName, gain) -> VolumeFlowShizuku.applyAppGain(packageName, gain) }\n        }\n    }\n\n    Scaffold(topBar = {
+    LaunchedEffect(shizukuStatus, saved) {
+        if (VolumeFlowShizuku.isReady()) {
+            saved.forEach { (packageName, gain) ->
+                VolumeFlowShizuku.applyAppGain(packageName, gain)
+            }
+        }
+    }
+
+    Scaffold(topBar = {
         TopAppBar(title = {
             Column {
                 Text("VolumeFlow", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
