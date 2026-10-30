@@ -18,6 +18,7 @@ class VolumeFlowUserService : IVolumeFlowService.Stub() {
     private var uidField: java.lang.reflect.Field? = null
     private var playerStateMethod: java.lang.reflect.Method? = null
     private var setVolumeMethod: java.lang.reflect.Method? = null
+    @Volatile private var engineStatus: String = "Audio service starting"
     private val gains = ConcurrentHashMap<String, Float>()
     private val uidPackages = ConcurrentHashMap<Int, String>()
 
@@ -44,9 +45,9 @@ class VolumeFlowUserService : IVolumeFlowService.Stub() {
             uidField = runCatching { AudioPlaybackConfiguration::class.java.getDeclaredField("mClientUid").apply { isAccessible = true } }.getOrNull()
             playerStateMethod = runCatching { AudioPlaybackConfiguration::class.java.getDeclaredMethod("getPlayerState").apply { isAccessible = true } }.getOrNull()
             audioManager?.registerAudioPlaybackCallback(playbackCallback, Handler(Looper.getMainLooper()))
-            Log.i(TAG, "VolumeFlow user service initialized")
+            engineStatus = if (audioManager != null && proxyMethod != null) "Audio APIs initialized" else "Audio APIs partially initialized"\n            Log.i(TAG, engineStatus)
         } catch (t: Throwable) {
-            Log.e(TAG, "Audio service initialization failed", t)
+            engineStatus = "Initialization failed: ${t.javaClass.simpleName}: ${t.message ?: "no details"}"\n            Log.e(TAG, engineStatus, t)
         }
     }
 
