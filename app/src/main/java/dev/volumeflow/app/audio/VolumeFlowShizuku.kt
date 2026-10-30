@@ -20,12 +20,12 @@ object VolumeFlowShizuku {
 
     private val component get() = ComponentName("dev.volumeflow.app", VolumeFlowUserService::class.java.name)
     private val args get() = Shizuku.UserServiceArgs(component)
-        .daemon(false).processNameSuffix("audio").debuggable(false).version(1)
+        .daemon(false).processNameSuffix("audio").debuggable(true).version(2).tag("volumeflow-audio")
 
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
             remote = IVolumeFlowService.Stub.asInterface(binder)
-            _status.value = "Audio engine connected"
+            _status.value = runCatching { remote?.getEngineStatus() ?: "Service connected, status unavailable" }.getOrElse { "Service connected, diagnostic failed: ${it.message}" }
         }
         override fun onServiceDisconnected(name: ComponentName?) {
             remote = null
