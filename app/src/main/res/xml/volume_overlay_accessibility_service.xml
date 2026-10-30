@@ -3,6 +3,7 @@
     android:accessibilityEventTypes="typeWindowStateChanged|typeWindowsChanged"
     android:accessibilityFeedbackType="feedbackGeneric"
     android:canRetrieveWindowContent="false"
+    android:canRequestFilterKeyEvents="true"
     android:description="@string/volume_overlay_accessibility_description"
     android:notificationTimeout="50"
     android:settingsActivity="dev.volumeflow.app.MainActivity" />
