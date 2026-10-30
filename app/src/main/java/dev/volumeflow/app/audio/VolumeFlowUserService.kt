@@ -45,9 +45,11 @@ class VolumeFlowUserService : IVolumeFlowService.Stub() {
             uidField = runCatching { AudioPlaybackConfiguration::class.java.getDeclaredField("mClientUid").apply { isAccessible = true } }.getOrNull()
             playerStateMethod = runCatching { AudioPlaybackConfiguration::class.java.getDeclaredMethod("getPlayerState").apply { isAccessible = true } }.getOrNull()
             audioManager?.registerAudioPlaybackCallback(playbackCallback, Handler(Looper.getMainLooper()))
-            engineStatus = if (audioManager != null && proxyMethod != null) "Audio APIs initialized" else "Audio APIs partially initialized"\n            Log.i(TAG, engineStatus)
+            engineStatus = if (audioManager != null && proxyMethod != null) "Audio APIs initialized" else "Audio APIs partially initialized"
+            Log.i(TAG, engineStatus)
         } catch (t: Throwable) {
-            engineStatus = "Initialization failed: ${t.javaClass.simpleName}: ${t.message ?: "no details"}"\n            Log.e(TAG, engineStatus, t)
+            engineStatus = "Initialization failed: ${t.javaClass.simpleName}: ${t.message ?: "no details"}"
+            Log.e(TAG, engineStatus, t)
         }
     }
 
@@ -109,6 +111,8 @@ class VolumeFlowUserService : IVolumeFlowService.Stub() {
 
     override fun getActiveSessionCount(): Int =
         runCatching { audioManager?.activePlaybackConfigurations?.size ?: 0 }.getOrDefault(0)
+
+    override fun getEngineStatus(): String = engineStatus
 
     override fun destroy() {
         runCatching { audioManager?.unregisterAudioPlaybackCallback(playbackCallback) }
