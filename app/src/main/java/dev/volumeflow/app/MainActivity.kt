@@ -3,6 +3,7 @@ package dev.volumeflow.app
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -20,9 +21,9 @@ import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import dev.volumeflow.app.audio.VolumeFlowShizuku
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import androidx.compose.foundation.isSystemInDarkTheme
 
 private val android.content.Context.dataStore by preferencesDataStore(name = "volume_profiles")
 private data class AppEntry(val label: String, val packageName: String)
@@ -30,7 +31,13 @@ private data class AppEntry(val label: String, val packageName: String)
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        VolumeFlowShizuku.start(this)
         setContent { VolumeFlowTheme { VolumeFlowHome() } }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        VolumeFlowShizuku.start(this)
     }
 }
 
@@ -51,6 +58,8 @@ private fun VolumeFlowTheme(content: @Composable () -> Unit) {
 private fun VolumeFlowHome() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val shizukuStatus by VolumeFlowShizuku.status.collectAsState()
+    val engineReady = VolumeFlowShizuku.isReady()
     val apps = remember {
         val intent = android.content.Intent(android.content.Intent.ACTION_MAIN)
             .addCategory(android.content.Intent.CATEGORY_LAUNCHER)
@@ -71,7 +80,7 @@ private fun VolumeFlowHome() {
         TopAppBar(title = {
             Column {
                 Text("VolumeFlow", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Text("Personal audio control", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Per-app audio control", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }, actions = { IconButton(onClick = {}) { Icon(Icons.Rounded.Tune, contentDescription = "Settings") } })
     }) { padding ->
@@ -82,13 +91,23 @@ private fun VolumeFlowHome() {
         ) {
             item {
                 Card(shape = RoundedCornerShape(26.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
-                    Row(Modifier.fillMaxWidth().padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Rounded.GraphicEq, contentDescription = null, modifier = Modifier.size(34.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
-                        Spacer(Modifier.width(16.dp))
-                        Column {
-                            Text("Per-app profiles", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                            Text("Save a preferred level for each app.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Rounded.GraphicEq, contentDescription = null, modifier = Modifier.size(34.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                            Spacer(Modifier.width(16.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text("Audio engine", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                Text(shizukuStatus, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                            }
                         }
+                        Button(onClick = { VolumeFlowShizuku.requestPermission() }, modifier = Modifier.fillMaxWidth()) {
+                            Text(if (engineReady) "Reconnect audio engine" else "Connect with Shizuku")
+                        }
+                        Text(
+                            "Requires Shizuku to be installed, running, and permission granted.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
                     }
                 }
             }
@@ -100,6 +119,7 @@ private fun VolumeFlowHome() {
             }
             items(apps, key = { it.packageName }) { app ->
                 val gain = (saved[app.packageName] ?: 1f).coerceIn(0f, 1f)
+                var applied by remember(app.packageName) { mutableStateOf(false) }
                 Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -110,13 +130,21 @@ private fun VolumeFlowHome() {
                             Text("${(gain * 100).toInt()}%", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
                         }
                         Slider(value = gain, onValueChange = { value ->
+                            val safe = value.coerceIn(0f, 1f)
                             scope.launch {
-                                context.dataStore.edit {
-                                    it[floatPreferencesKey("gain_${app.packageName}")] = value.coerceIn(0f, 1f)
-                                }
+                                context.dataStore.edit { it[floatPreferencesKey("gain_${app.packageName}")] = safe }
                             }
+                            applied = VolumeFlowShizuku.applyAppGain(app.packageName, safe)
                         }, valueRange = 0f..1f)
-                        Text("Saved profile only. Audio-session control is not connected yet.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            when {
+                                applied -> "Gain sent to active playback sessions"
+                                engineReady -> "Profile saved. Waiting for this app to play audio."
+                                else -> "Profile saved. Connect Shizuku to control audio."
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             }
