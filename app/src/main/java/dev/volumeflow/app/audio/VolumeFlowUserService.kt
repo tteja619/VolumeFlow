@@ -112,7 +112,25 @@ class VolumeFlowUserService : IVolumeFlowService.Stub() {
     override fun getActiveSessionCount(): Int =
         runCatching { audioManager?.activePlaybackConfigurations?.size ?: 0 }.getOrDefault(0)
 
-    override fun getEngineStatus(): String = engineStatus
+    override fun getEngineStatus(): String {
+        val configs = runCatching { audioManager?.activePlaybackConfigurations.orEmpty() }
+            .getOrElse { return "$engineStatus | Playback query failed: ${it.javaClass.simpleName}: ${it.message}" }
+        val sessions = configs.map { config ->
+            val uid = clientUid(config)
+            val pkg = packageForUid(uid) ?: "unknown"
+            val state = runCatching { playerStateMethod?.invoke(config)?.toString() ?: "unavailable" }.getOrDefault("error")
+            val proxy = runCatching { proxyMethod?.invoke(config) }.getOrNull()
+            val proxyVolume = proxy?.let {
+                runCatching {
+                    it.javaClass.getDeclaredMethod("setVolume", Float::class.javaPrimitiveType).apply { isAccessible = true }
+                    "available"
+                }.getOrElse { "missing" }
+            } ?: "unavailable"
+            "$pkg(uid=$uid,state=$state,proxy=$proxyVolume)"
+        }
+        return "$engineStatus | sessions=${configs.size} | " +
+            if (sessions.isEmpty()) "No active playback sessions detected" else sessions.joinToString("; ")
+    }
 
     override fun destroy() {
         runCatching { audioManager?.unregisterAudioPlaybackCallback(playbackCallback) }
