@@ -77,8 +77,10 @@ private fun VolumeFlowHome() {
     }.collectAsState(initial = emptyMap())
 
     LaunchedEffect(shizukuStatus, saved) {
-        if (VolumeFlowShizuku.isReady()) {
-            saved.forEach { (packageName, gain) ->
+        saved.forEach { (packageName, gain) ->
+            context.getSharedPreferences("volume_overlay_profiles", android.content.Context.MODE_PRIVATE)
+                .edit().putFloat(packageName, gain).apply()
+            if (VolumeFlowShizuku.isReady()) {
                 VolumeFlowShizuku.applyAppGain(packageName, gain)
             }
         }
