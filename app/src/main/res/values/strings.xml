@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">VolumeFlow</string>
+    <string name="volume_overlay_accessibility_description">Intercepts media volume keys while media is playing to show VolumeFlow's per-app 120-step volume panel.</string>
+</resources>
