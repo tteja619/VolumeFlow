@@ -65,6 +65,12 @@ object VolumeFlowShizuku {
 
     fun requestPermission() {
         try {
+            remote?.let { service ->
+                _status.value = runCatching { service.getEngineStatus() }
+                    .getOrElse { "Audio engine diagnostic failed: ${it.message ?: it.javaClass.simpleName}" }
+                if (_status.value.startsWith("Audio engine diagnostic failed")) remote = null
+                return
+            }
             if (!Shizuku.pingBinder()) {
                 _status.value = "Open Shizuku and start its service"
                 return
