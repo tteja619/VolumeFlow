@@ -117,7 +117,7 @@ object VolumeFlowShizuku {
         }
     }
 
-    fun activePackages(): List<String> = runCatching { remote?.activeAppPackages.orEmpty() }.getOrDefault(emptyList())
-    fun activeSessionCount(): Int = runCatching { remote?.activeSessionCount ?: 0 }.getOrDefault(0)
+    fun activePackages(): List<String> = runCatching { remote?.getActiveAppPackages().orEmpty() }.getOrDefault(emptyList())
+    fun activeSessionCount(): Int = runCatching { remote?.getActiveSessionCount() ?: 0 }.getOrDefault(0)
     fun isReady(): Boolean = remote != null
 }
