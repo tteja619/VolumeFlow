@@ -1,6 +1,7 @@
 package dev.volumeflow.app.audio
 
 import android.accessibilityservice.AccessibilityService
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.graphics.PixelFormat
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
@@ -34,7 +35,10 @@ class VolumeOverlayAccessibilityService : AccessibilityService() {
         audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         serviceInfo = serviceInfo.apply {
-            flags = flags or FLAG_REQUEST_FILTER_KEY_EVENTS or FLAG_RETRIEVE_INTERACTIVE_WINDOWS
+            // Key-event filtering is required for the custom hardware volume panel.
+            // Window retrieval is deliberately not requested because this service
+            // identifies the foreground app from accessibility window events only.
+            flags = flags or AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS
             eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or AccessibilityEvent.TYPE_WINDOWS_CHANGED
             notificationTimeout = 50
         }
