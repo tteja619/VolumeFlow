@@ -111,7 +111,7 @@ class VolumeFlowUserService : IVolumeFlowService.Stub() {
 
     override fun destroy() {
         runCatching { audioManager?.unregisterAudioPlaybackCallback(playbackCallback) }
-        exitProcess(0)
+        android.os.Process.killProcess(android.os.Process.myPid())
     }
 
     companion object { private const val TAG = "VolumeFlowService" }
