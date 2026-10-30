@@ -2,7 +2,7 @@ name: VolumeFlow Android Build
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, v2-volume-overlay ]
   workflow_dispatch:
 
 jobs:
