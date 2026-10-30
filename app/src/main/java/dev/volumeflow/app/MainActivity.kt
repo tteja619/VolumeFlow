@@ -135,7 +135,7 @@ private fun VolumeFlowHome() {
                                 Text(app.label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
                                 Text(app.packageName, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
-                            Text("${(gain * 100).toInt()}%", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                            Text("${(gain * 120).toInt()}/120", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
                         }
                         Slider(value = gain, onValueChange = { value ->
                             val safe = value.coerceIn(0f, 1f)
@@ -143,10 +143,10 @@ private fun VolumeFlowHome() {
                                 context.dataStore.edit { it[floatPreferencesKey("gain_${app.packageName}")] = safe }
                             }
                             applied = VolumeFlowShizuku.applyAppGain(app.packageName, safe)
-                        }, valueRange = 0f..1f)
+                        }, valueRange = 0f..1f, steps = 119)
                         Text(
                             when {
-                                applied -> "Gain sent to active playback sessions"
+                                applied -> "120-step gain sent to active playback sessions"
                                 engineReady -> "Profile saved. Waiting for this app to play audio."
                                 else -> "Profile saved. Connect Shizuku to control audio."
                             },
