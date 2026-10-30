@@ -22,6 +22,7 @@ import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.isSystemInDarkTheme
 
 private val android.content.Context.dataStore by preferencesDataStore(name = "volume_profiles")
 private data class AppEntry(val label: String, val packageName: String)
