@@ -6,5 +6,6 @@ interface IVolumeFlowService {
     void applyAppGain(String packageName, float gain);
     List<String> getActiveAppPackages();
     int getActiveSessionCount();
+    String getEngineStatus();
     void destroy();
 }
