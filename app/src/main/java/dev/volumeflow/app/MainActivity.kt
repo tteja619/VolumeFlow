@@ -90,7 +90,9 @@ private fun VolumeFlowHome() {
                 Text("VolumeFlow", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Text("Per-app audio control", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-        }, actions = { IconButton(onClick = {}) { Icon(Icons.Rounded.Tune, contentDescription = "Settings") } })
+        }, actions = { IconButton(onClick = {
+            context.startActivity(android.content.Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS))
+        }) { Icon(Icons.Rounded.Tune, contentDescription = "Volume overlay settings") } })
     }) { padding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
@@ -142,6 +144,8 @@ private fun VolumeFlowHome() {
                             scope.launch {
                                 context.dataStore.edit { it[floatPreferencesKey("gain_${app.packageName}")] = safe }
                             }
+                            context.getSharedPreferences("volume_overlay_profiles", android.content.Context.MODE_PRIVATE)
+                                .edit().putFloat(app.packageName, safe).apply()
                             applied = VolumeFlowShizuku.applyAppGain(app.packageName, safe)
                         }, valueRange = 0f..1f, steps = 119)
                         Text(
